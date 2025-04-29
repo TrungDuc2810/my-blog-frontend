@@ -3,12 +3,16 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getProductById } from "../../services/ProductService";
 import { toast } from "react-toastify";
 import PageTransition from '../main/PageTransition';
+import { useAuth } from "../../hooks/useAuth";
+import { addToCart } from "../../services/CartService";
+import { getUserByUsername } from "../../services/UserService";
 
 const ProductDetailComponent = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { currentUser } = useAuth();
 
   const loadProduct = useCallback(async () => {
     try {
@@ -27,33 +31,58 @@ const ProductDetailComponent = () => {
     loadProduct();
   }, [loadProduct]);
 
-  const addToCart = () => {
-    const savedCart = localStorage.getItem('cart');
-    let cart = savedCart ? JSON.parse(savedCart) : [];
-    
-    const existingItem = cart.find(item => item.id === product.id);
-    const priceToUse = product.discountPrice > 0 ? product.discountPrice : product.price;
-    
-    if (existingItem) {
-      cart = cart.map(item =>
-        item.id === product.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      );
-      toast.success('Đã cập nhật số lượng trong giỏ hàng');
-    } else {
-      cart.push({
-        id: product.id,
-        name: product.name,
-        price: priceToUse,
-        image: product.productThumbnail?.filePath,
-        quantity: 1
-      });
-      toast.success('Đã thêm sản phẩm vào giỏ hàng');
+  const handleAddToCart = async () => {
+    try {
+      if (currentUser?.username) {
+        // Get current user details
+        const user = await getUserByUsername(currentUser.username);
+        
+        // Add to cart in database
+        await addToCart(currentUser.username, {
+          userId: user.id,
+          productId: product.id,
+          quantity: 1  // Always add 1, the backend will handle incrementing existing items
+        });
+        
+        toast.success('Đã thêm sản phẩm vào giỏ hàng');
+      } else {
+        // Handle localStorage cart for non-logged in users
+        let cart = [];
+        const savedCart = localStorage.getItem('cart');
+        if (savedCart) {
+          cart = JSON.parse(savedCart);
+        }
+
+        const existingItem = cart.find(item => item.id === product.id);
+        const priceToUse = product.discountPrice > 0 ? product.discountPrice : product.price;
+
+        if (existingItem) {
+          cart = cart.map(item =>
+            item.id === product.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          );
+          toast.success('Đã cập nhật số lượng trong giỏ hàng');
+        } else {
+          cart.push({
+            id: product.id,
+            name: product.name,
+            price: priceToUse,
+            image: product.productThumbnail?.filePath,
+            quantity: 1
+          });
+          toast.success('Đã thêm sản phẩm vào giỏ hàng');
+        }
+        
+        localStorage.setItem('cart', JSON.stringify(cart));
+      }
+
+      // Notify other components about cart update
+      window.dispatchEvent(new CustomEvent('cartUpdated'));
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error('Lỗi khi thêm sản phẩm vào giỏ hàng');
     }
-    
-    localStorage.setItem('cart', JSON.stringify(cart));
-    window.dispatchEvent(new CustomEvent('cartUpdated'));
   };
 
   if (loading) {
@@ -106,7 +135,7 @@ const ProductDetailComponent = () => {
                 <h2>Description</h2>
                 <p>{product.description}</p>
               </div>
-              <button className="add-to-cart-btn" onClick={addToCart}>Add to Cart</button>
+              <button className="add-to-cart-btn" onClick={handleAddToCart}>Add to Cart</button>
             </div>
           </div>
         </div>

@@ -15,9 +15,6 @@ const ProductListComponent = () => {
   const loadProducts = async () => {
     try {
       const data = await getAllProducts();
-      console.log("API Response:", data); // Debug log
-
-      // Ensure data is an array or get the content property if it exists
       const productsArray = Array.isArray(data) ? data : data?.content || [];
       setProducts(productsArray);
     } catch (error) {

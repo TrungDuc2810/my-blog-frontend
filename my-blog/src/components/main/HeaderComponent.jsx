@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import PropTypes from "prop-types";
 import { Link, useNavigate } from "react-router-dom";
 import { logout } from "../../services/AuthService";
+import { getCartItems } from "../../services/CartService";
 import { toast } from "react-toastify";
 
 const HeaderComponent = ({ onSearch, currentUser, setCurrentUser }) => {
@@ -13,45 +14,58 @@ const HeaderComponent = ({ onSearch, currentUser, setCurrentUser }) => {
   const exploreDropdownRef = useRef(null);
   const navigate = useNavigate();
 
+  const updateCartCount = useCallback(async () => {
+    try {
+      let itemCount = 0;
+
+      if (currentUser?.username) {
+        // Nếu user đã đăng nhập, lấy số lượng items từ API
+        const cartItems = await getCartItems(currentUser.username);
+        itemCount = cartItems.length;
+      } else {
+        // Nếu chưa đăng nhập, lấy số lượng items từ localStorage
+        const savedCart = localStorage.getItem("cart");
+        if (savedCart) {
+          const cart = JSON.parse(savedCart);
+          itemCount = cart.length;
+        }
+      }
+      setCartCount(itemCount);
+    } catch (error) {
+      console.error("Error updating cart count:", error);
+      setCartCount(0);
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
       }
-      if (exploreDropdownRef.current && !exploreDropdownRef.current.contains(event.target)) {
+      if (
+        exploreDropdownRef.current &&
+        !exploreDropdownRef.current.contains(event.target)
+      ) {
         setShowExploreDropdown(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   useEffect(() => {
-    // Cập nhật số lượng ban đầu
     updateCartCount();
 
-    // Lắng nghe sự kiện cập nhật giỏ hàng
     const handleCartUpdate = () => {
       updateCartCount();
     };
 
-    window.addEventListener('cartUpdated', handleCartUpdate);
-    return () => window.removeEventListener('cartUpdated', handleCartUpdate);
-  }, []);
-
-  const updateCartCount = () => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      const cart = JSON.parse(savedCart);
-      const count = cart.length;
-      setCartCount(count);
-    } else {
-      setCartCount(0);
-    }
-  };
+    window.addEventListener("cartUpdated", handleCartUpdate);
+    return () => window.removeEventListener("cartUpdated", handleCartUpdate);
+  }, [updateCartCount]);
 
   const handleChange = (e) => {
     setInput(e.target.value);
@@ -59,27 +73,25 @@ const HeaderComponent = ({ onSearch, currentUser, setCurrentUser }) => {
   };
 
   const handleLogin = () => {
-    navigate('/login');
+    navigate("/login");
   };
 
   const handleSignup = () => {
-    navigate('/register');
+    navigate("/register");
   };
 
   const handleLogout = async () => {
     try {
       await logout();
       setCurrentUser(null);
-      toast.success('Đăng xuất thành công!');
-      
-      // Force a complete page reload to clear all state
-      window.location.href = '/';
+      toast.success("Đăng xuất thành công!");
+
+      window.location.href = "/";
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
       setCurrentUser(null);
-      toast.error('Có lỗi xảy ra khi đăng xuất');
-      // Still redirect on error
-      window.location.href = '/';
+      toast.error("Có lỗi xảy ra khi đăng xuất");
+      window.location.href = "/";
     }
   };
 
@@ -111,13 +123,21 @@ const HeaderComponent = ({ onSearch, currentUser, setCurrentUser }) => {
           <div className="header-sidenav-home">Home</div>
           <div className="header-sidenav-popular">Popular</div>
           <div className="header-sidenav-explore" ref={exploreDropdownRef}>
-            <div onClick={toggleExploreDropdown} style={{ cursor: 'pointer' }}>
+            <div onClick={toggleExploreDropdown} style={{ cursor: "pointer" }}>
               Explore
-              <i className={`fa-solid fa-chevron-${showExploreDropdown ? 'up' : 'down'}`}></i>
+              <i
+                className={`fa-solid fa-chevron-${
+                  showExploreDropdown ? "up" : "down"
+                }`}
+              ></i>
             </div>
             {showExploreDropdown && (
               <div className="header-explore-dropdown">
-                <Link to="/products" className="explore-dropdown-item" onClick={() => setShowExploreDropdown(false)}>
+                <Link
+                  to="/products"
+                  className="explore-dropdown-item"
+                  onClick={() => setShowExploreDropdown(false)}
+                >
                   <i className="fa-solid fa-shop"></i>
                   <span>Products</span>
                 </Link>
@@ -134,9 +154,9 @@ const HeaderComponent = ({ onSearch, currentUser, setCurrentUser }) => {
               <span className="cart-count">{cartCount}</span>
             </Link>
             <div className="header-user-profile" ref={dropdownRef}>
-              <img 
-                src="/default.png" 
-                alt="User Avatar" 
+              <img
+                src="/default.png"
+                alt="User Avatar"
                 className="header-avatar"
                 onClick={toggleDropdown}
               />
@@ -150,6 +170,10 @@ const HeaderComponent = ({ onSearch, currentUser, setCurrentUser }) => {
                     <i className="fa-regular fa-bell"></i>
                     <span>Notifications</span>
                   </div>
+                  <Link to="/orders" className="dropdown-item" onClick={() => setShowDropdown(false)}>
+                    <i className="fa-solid fa-box"></i>
+                    <span>Orders</span>
+                  </Link>
                   <div className="dropdown-divider"></div>
                   <div className="dropdown-item">
                     <i className="fa-solid fa-gear"></i>
@@ -170,8 +194,12 @@ const HeaderComponent = ({ onSearch, currentUser, setCurrentUser }) => {
               <i className="fa-solid fa-shopping-cart"></i>
               <span className="cart-count">{cartCount}</span>
             </Link>
-            <div className="header-auth-signup" onClick={handleSignup}>Sign up</div>
-            <div className="header-auth-login" onClick={handleLogin}>Log in</div>
+            <div className="header-auth-signup" onClick={handleSignup}>
+              Sign up
+            </div>
+            <div className="header-auth-login" onClick={handleLogin}>
+              Log in
+            </div>
           </>
         )}
       </div>
@@ -182,7 +210,7 @@ const HeaderComponent = ({ onSearch, currentUser, setCurrentUser }) => {
 HeaderComponent.propTypes = {
   onSearch: PropTypes.func.isRequired,
   currentUser: PropTypes.object,
-  setCurrentUser: PropTypes.func.isRequired
+  setCurrentUser: PropTypes.func.isRequired,
 };
 
 export default HeaderComponent;

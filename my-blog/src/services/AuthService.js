@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 const AUTH_REST_API_URL = `${BASE_URL}/api/auth`;
 const OAUTH2_GOOGLE_URL = `${BASE_URL}/oauth2/authorization/google`;
 

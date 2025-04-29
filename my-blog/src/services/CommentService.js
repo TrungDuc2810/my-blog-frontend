@@ -1,12 +1,14 @@
 import axios from "axios";
 
-const BASE_REST_API_URL = "http://localhost:8080/api/posts";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 axios.defaults.withCredentials = true; // Đảm bảo axios gửi cookies cùng yêu cầu
 
 export const getCommentsByPostId = async (postId) => {
   try {
-    const response = await axios.get(`${BASE_REST_API_URL}/${postId}/comments`);
+    const response = await axios.get(
+      `${BASE_URL}/api/posts/${postId}/comments`
+    );
     return response.data;
   } catch (error) {
     console.error(
@@ -20,7 +22,7 @@ export const getCommentsByPostId = async (postId) => {
 export const createComment = async (postId, formData) => {
   try {
     const response = await axios.post(
-      `${BASE_REST_API_URL}/${postId}/comments`,
+      `${BASE_URL}/api/posts/${postId}/comments`,
       formData
     );
     return response.data;

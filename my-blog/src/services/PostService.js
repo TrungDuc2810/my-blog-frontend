@@ -1,12 +1,12 @@
 import axios from "axios";
 
-const BASE_REST_API_URL = "http://localhost:8080/api/posts";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 axios.defaults.withCredentials = true; // Đảm bảo axios gửi cookies cùng yêu cầu
 
 export const getPostById = async (id) => {
   try {
-    const response = await axios.get(`${BASE_REST_API_URL}/${id}`);
+    const response = await axios.get(`${BASE_URL}/api/posts/${id}`);
     return response.data;
   } catch (error) {
     console.error(
@@ -18,7 +18,7 @@ export const getPostById = async (id) => {
 };
 
 export const getAllPosts = (pageNo, pageSize, sortBy, sortDir) => {
-  const url = `${BASE_REST_API_URL}?pageNo=${pageNo}&pageSize=${pageSize}&sortBy=${sortBy}&sortDir=${sortDir}`;
+  const url = `${BASE_URL}/api/posts?pageNo=${pageNo}&pageSize=${pageSize}&sortBy=${sortBy}&sortDir=${sortDir}`;
   return axios.get(url);
 };
 
@@ -29,7 +29,7 @@ export const getPostsByCategoryId = (
   sortBy,
   sortDir
 ) => {
-  const url = `${BASE_REST_API_URL}/category/${categoryId}?pageNo=${pageNo}&pageSize=${pageSize}&sortBy=${sortBy}&sortDir=${sortDir}`;
+  const url = `${BASE_URL}/api/posts/category/${categoryId}?pageNo=${pageNo}&pageSize=${pageSize}&sortBy=${sortBy}&sortDir=${sortDir}`;
   return axios.get(url);
 };
 
@@ -40,16 +40,16 @@ export const searchPostsByTitle = (
   sortBy,
   sortDir
 ) => {
-  const url = `${BASE_REST_API_URL}/search?title=${title}&pageNo=${pageNo}&pageSize=${pageSize}&sortBy=${sortBy}&sortDir=${sortDir}`;
+  const url = `${BASE_URL}/api/posts/search?title=${title}&pageNo=${pageNo}&pageSize=${pageSize}&sortBy=${sortBy}&sortDir=${sortDir}`;
   return axios.get(url);
 };
 
-export const getTotalPosts = () => axios.get(`${BASE_REST_API_URL}/total`);
+export const getTotalPosts = () => axios.get(`${BASE_URL}/api/posts/total`);
 
 // Tạo bài viết, axios sẽ tự động thiết lập khi gửi form data
 export const createPost = async (formData) => {
   try {
-    const response = await axios.post(BASE_REST_API_URL, formData);
+    const response = await axios.post(`${BASE_URL}/api/posts`, formData);
     return response.data;
   } catch (error) {
     console.error(
@@ -63,7 +63,7 @@ export const createPost = async (formData) => {
 // Cập nhật bài viết
 export const updatePost = async (id, formData) => {
   try {
-    const response = await axios.put(`${BASE_REST_API_URL}/${id}`, formData);
+    const response = await axios.put(`${BASE_URL}/api/posts/${id}`, formData);
     return response.data;
   } catch (error) {
     console.error(
@@ -77,7 +77,7 @@ export const updatePost = async (id, formData) => {
 // Xóa bài viết
 export const deletePost = async (id) => {
   try {
-    const response = await axios.delete(`${BASE_REST_API_URL}/${id}`);
+    const response = await axios.delete(`${BASE_URL}/api/posts/${id}`);
     return response.data;
   } catch (error) {
     console.error(

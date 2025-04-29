@@ -20,12 +20,12 @@ import LoginForm from './components/main/LoginForm';
 import RegisterForm from './components/main/RegisterForm';
 import ProductListComponent from './components/products/ProductListComponent';
 import ProductDetailComponent from './components/products/ProductDetailComponent';
-import './components/products/Products.css';
 import HeaderComponent from './components/main/HeaderComponent';
 import FooterComponent from './components/main/FooterComponent';
 import { useState } from 'react';
 import { useAuth } from './hooks/useAuth';
 import CartComponent from './components/products/CartComponent';
+import OrdersComponent from './components/main/OrdersComponent';
 
 // Protected Route for both admin and user routes
 import PropTypes from 'prop-types';
@@ -85,6 +85,11 @@ function AnimatedRoutes() {
             <Route path="/products" element={<ProductListComponent />} />
             <Route path="/products/:id" element={<ProductDetailComponent />} />
             <Route path="/cart" element={<CartComponent />} />
+            <Route path="/orders" element={
+              <ProtectedRoute>
+                <OrdersComponent />
+              </ProtectedRoute>
+            } />
           </Route>
 
           {/* Protected admin routes */}
