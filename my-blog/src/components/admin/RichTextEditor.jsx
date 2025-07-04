@@ -4,6 +4,7 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { getAllCategories } from "../../services/CategoryService";
 import { createPost, updatePost } from "../../services/PostService";
+import { generatePostDescription } from "../../services/PostService";
 
 // eslint-disable-next-line react/prop-types
 const RichTextEditor = ({ onSave, onCancel, initialPost = {} }) => {
@@ -29,6 +30,22 @@ const RichTextEditor = ({ onSave, onCancel, initialPost = {} }) => {
     }
   };
 
+  const handleGenerateDescription = async () => {
+    if (!title) {
+      alert("Please enter a title before generating a description.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const result = await generatePostDescription(title);
+      setDescription(result);
+    } catch (error) {
+      alert("Error generating description:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!title || !content || !description || !category || !thumbnail) {
       alert("All fields are required!");
@@ -46,7 +63,15 @@ const RichTextEditor = ({ onSave, onCancel, initialPost = {} }) => {
       formData.append(
         "post",
         new Blob(
-          [JSON.stringify({ id: initialPost.id, title, content, description, categoryId: category })],
+          [
+            JSON.stringify({
+              id: initialPost.id,
+              title,
+              content,
+              description,
+              categoryId: category,
+            }),
+          ],
           { type: "application/json" }
         )
       );
@@ -81,13 +106,23 @@ const RichTextEditor = ({ onSave, onCancel, initialPost = {} }) => {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
-        <input
+        <textarea
           type="text"
           placeholder="Enter post description"
           className="editor-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          rows={3} // Increase the number of visible lines
         />
+        <div>
+          <button
+            className="btn btn-primary"
+            onClick={handleGenerateDescription}
+            disabled={loading}
+          >
+            {loading ? "Generating..." : "Generate description"}
+          </button>
+        </div>
         <select
           className="editor-category"
           value={category}
@@ -154,15 +189,28 @@ RichTextEditor.modules = {
 };
 
 RichTextEditor.formats = [
-  "header", "font", "size",
-  "bold", "italic", "underline", "strike",
-  "color", "background",
-  "script", "sub", "super",
-  "list", "bullet", "check",
+  "header",
+  "font",
+  "size",
+  "bold",
+  "italic",
+  "underline",
+  "strike",
+  "color",
+  "background",
+  "script",
+  "sub",
+  "super",
+  "list",
+  "bullet",
+  "check",
   "indent",
   "align",
-  "blockquote", "code-block",
-  "link", "image", "video",
+  "blockquote",
+  "code-block",
+  "link",
+  "image",
+  "video",
 ];
 
 export default RichTextEditor;

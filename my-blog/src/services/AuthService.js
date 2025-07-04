@@ -29,18 +29,34 @@ export const registerCallAPI = async (registerObj) => {
   }
 };
 
+// Redirect to Google OAuth2
+export const redirectToGoogleLogin = () => {
+  window.location.href = OAUTH2_GOOGLE_URL;
+};
+
 // Login API call
 export const loginCallAPI = async (usernameOrEmail, password) => {
   try {
+    console.log("Attempting login for:", usernameOrEmail);
     const response = await axios.post(AUTH_REST_API_URL + "/login", {
       usernameOrEmail,
       password,
     });
 
+    console.log("Login response:", response);
+
     // Kiểm tra response và gọi getCurrentUser để lấy thông tin user
     if (response.status === 200) {
-      const user = await getCurrentUser();
-      return { success: true, user };
+      // Lưu trạng thái đăng nhập vào localStorage
+      if (response.data && response.data.username) {
+        localStorage.setItem("user", JSON.stringify(response.data));
+        console.log("User info saved to localStorage:", response.data);
+      }
+
+      return {
+        success: true,
+        user: response.data || (await getCurrentUser()),
+      };
     }
 
     throw new Error("Login failed");
@@ -50,17 +66,27 @@ export const loginCallAPI = async (usernameOrEmail, password) => {
   }
 };
 
-// Redirect to Google OAuth2
-export const redirectToGoogleLogin = () => {
-  window.location.href = OAUTH2_GOOGLE_URL;
-};
-
 // Logout API call
 export const logout = async () => {
   try {
-    await axios.post(`${AUTH_REST_API_URL}/logout`);
+    console.log("Attempting logout");
+    const response = await axios.post(`${AUTH_REST_API_URL}/logout`);
+    console.log("Logout response:", response);
+
     // Clear any stored user data
     localStorage.removeItem("user");
+
+    // Kiểm tra nếu cookie vẫn còn
+    const cookies = document.cookie;
+    console.log("Cookies after logout:", cookies);
+
+    // Force xóa cookie bằng javascript nếu cần
+    document.cookie =
+      "jwtToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure; samesite=none";
+    document.cookie =
+      "roles=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure; samesite=none";
+
+    return true;
   } catch (error) {
     console.error("Logout error:", error);
     // Force logout on client side even if server call fails
@@ -72,17 +98,26 @@ export const logout = async () => {
 // Get current user information
 export const getCurrentUser = async () => {
   try {
+    console.log("Fetching current user info");
     const response = await axios.get(`${AUTH_REST_API_URL}/me`);
+    console.log("Current user response:", response);
+
     if (response.data) {
       localStorage.setItem("user", JSON.stringify(response.data));
       return response.data;
     }
     return null;
   } catch (error) {
+    console.error("Error fetching current user:", error);
     if (error.response?.status === 401) {
       localStorage.removeItem("user");
       return null;
     }
     throw error;
   }
+};
+
+// Check if user is logged in
+export const isLoggedIn = () => {
+  return localStorage.getItem("user") !== null;
 };

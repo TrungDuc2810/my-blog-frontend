@@ -4,20 +4,19 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: true,
-    proxy: {
-      "/api": {
-        // eslint-disable-next-line no-undef
-        target: process.env.VITE_API_URL || "http://backend:8080",
-        changeOrigin: true,
-        secure: false,
-      },
+    port: 3000,
+  },
+  resolve: {
+    alias: {
+      // Thêm các alias này
+      process: "process/browser",
+      stream: "stream-browserify",
+      zlib: "browserify-zlib",
+      util: "util",
     },
   },
   define: {
-    "process.env.VITE_API_URL": JSON.stringify(
-      // eslint-disable-next-line no-undef
-      process.env.VITE_API_URL || "http://backend:8080"
-    ),
+    // Thêm định nghĩa global
+    global: "window",
   },
 });

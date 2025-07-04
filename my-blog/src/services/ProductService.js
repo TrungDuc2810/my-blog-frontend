@@ -2,8 +2,10 @@ import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-export const getAllProducts = async () => {
-  const response = await axios.get(`${BASE_URL}/api/products`);
+export const getAllProducts = async (pageNo, pageSize, sortBy, sortDir) => {
+  const response = await axios.get(
+    `${BASE_URL}/api/products?pageNo=${pageNo}&pageSize=${pageSize}&sortBy=${sortBy}&sortDir=${sortDir}`
+  );
   return response.data;
 };
 

@@ -3,24 +3,32 @@ import { Link } from "react-router-dom";
 import { getAllProducts } from "../../services/ProductService";
 import { toast } from "react-toastify";
 import PageTransition from "../main/PageTransition";
+import ScrollToTopButton from "../common/ScrollToTopButton";
+import Pagination from "../common/Pagination";
+
+const PAGE_SIZE = 9;
 
 const ProductListComponent = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pageNo, setPageNo] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    loadProducts();
-  }, []);
+    loadProducts(pageNo);
+  }, [pageNo]);
 
-  const loadProducts = async () => {
+  const loadProducts = async (page) => {
+    setLoading(true);
     try {
-      const data = await getAllProducts();
-      const productsArray = Array.isArray(data) ? data : data?.content || [];
-      setProducts(productsArray);
+      const data = await getAllProducts(page, PAGE_SIZE, "id", "asc");
+      setProducts(Array.isArray(data) ? data : data?.content || []);
+      setTotalPages(data?.totalPages || 1);
     } catch (error) {
       toast.error("Failed to load products");
       console.error("Error loading products:", error);
-      setProducts([]); // Set empty array on error
+      setProducts([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -30,7 +38,6 @@ const ProductListComponent = () => {
     return <div className="loading">Loading products...</div>;
   }
 
-  // Show message if no products
   if (!products.length) {
     return (
       <div className="products-container">
@@ -84,7 +91,13 @@ const ProductListComponent = () => {
               </div>
             ))}
           </div>
+          <Pagination
+            pageNo={pageNo}
+            totalPages={totalPages}
+            onPageChange={setPageNo}
+          />
         </div>
+        <ScrollToTopButton showBelow={300} />
       </div>
     </PageTransition>
   );

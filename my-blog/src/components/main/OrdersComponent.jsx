@@ -3,10 +3,12 @@ import { useAuth } from '../../hooks/useAuth';
 import PageTransition from './PageTransition';
 import { getOrdersByUserId } from '../../services/OrderService';
 import { getUserByUsername } from '../../services/UserService';
+import OrderDetailsPopup from '../products/OrderDetailsPopup';
 
 const OrdersComponent = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -76,7 +78,12 @@ const OrdersComponent = () => {
         ) : (
           <div className="orders-list">
             {orders.map((order) => (
-              <div key={order.id} className="order-item">
+              <div
+                key={order.id}
+                className="order-item"
+                style={{ cursor: 'pointer' }}
+                onClick={() => setSelectedOrder(order)}
+              >
                 <div className="order-header">
                   <h3>Order #{order.id}</h3>
                   <span className={`order-status status-${order.status.toLowerCase()}`}>
@@ -90,6 +97,12 @@ const OrdersComponent = () => {
               </div>
             ))}
           </div>
+        )}
+        {selectedOrder && (
+          <OrderDetailsPopup
+            order={selectedOrder}
+            onClose={() => setSelectedOrder(null)}
+          />
         )}
       </div>
     </PageTransition>

@@ -88,6 +88,20 @@ export const getOrderItem = async (orderItemId) => {
   }
 };
 
+export const getOrderItemsByOrderId = async (orderId) => {
+  try {
+    const response = await axios.get(`${API_URL}/order/${orderId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching order items by order ID:", {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    throw error;
+  }
+};
+
 export const deleteOrderItem = async (orderItemId) => {
   try {
     const response = await axios.delete(`${API_URL}/${orderItemId}`);

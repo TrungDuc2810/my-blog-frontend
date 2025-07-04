@@ -1,14 +1,20 @@
 // eslint-disable-next-line no-unused-vars
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getPostById } from "../../services/PostService";
 import { getMediaByPostId } from "../../services/MediaService";
 import { getCategoryById } from "../../services/CategoryService";
-import { getCommentsByPostId } from "../../services/CommentService";
+import { 
+  getCommentsByPostId, 
+  createComment, 
+  subscribeToComments,
+  createCommentViaWebSocket
+} from "../../services/CommentService";
+import webSocketService from "../../services/WebSocketService";
 import { getPostsByCategoryId } from "../../services/PostService";
-import { createComment } from "../../services/CommentService";
 import PageTransition from './PageTransition';
+import ScrollToTopButton from "../common/ScrollToTopButton";
+
 
 const PostDetailComponent = () => {
   const { postId } = useParams();
@@ -24,6 +30,54 @@ const PostDetailComponent = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [postsPerPage] = useState(5);
   const [totalPages, setTotalPages] = useState(1);
+
+  const [subscription, setSubscription] = useState(null);
+
+  useEffect(() => {
+    webSocketService.connect(() => {
+      console.log("WebSocket connected for post comments");
+      if (postId) {
+        const sub = subscribeToComments(postId, handleCommentNotification);
+        setSubscription(sub);
+      }
+    });
+
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postId]);
+
+  const handleCommentNotification = (notification) => {
+    console.log("Received comment notification:", notification);
+
+    switch (notification.type) {
+      case "CREATE":
+        setComments((prevComments) => [
+          ...prevComments,
+          notification.comment,
+        ]);
+        break;
+      case "UPDATE":
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            comment.id === notification.comment.id ? notification.comment : comment
+          )
+        );
+        console.log("Comment updated:", notification.comment);
+        break;
+      case "DELETE":
+        setComments((prevComments) =>
+          prevComments.filter((comment) => comment.id !== notification.comment.id)
+        );
+        console.log("Comment deleted:", notification.comment);
+        break;
+      default:
+        console.warn("Unknown notification type:", notification.type);
+    }
+  };
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" }); 
@@ -76,23 +130,26 @@ const PostDetailComponent = () => {
 
     if (!commentText.trim()) return; // Không gửi nếu bình luận rỗng
 
+    const newComment = {
+      postId: postId,
+      name: "Anonymous",
+      email: "anonymous2810@example.com",
+      body: commentText,
+    };
+
     try {
-      const newComment = {
-        postId: postId,
-        name: "Anonymous",
-        email: "anonymous2810@example.com",
-        body: commentText,
-      };
-
+      createCommentViaWebSocket(postId, newComment); // Gửi bình luận qua WebSocket
+      setCommentText(""); // Xóa ô nhập bình luận
+      
       // Gửi bình luận lên server và load lại danh sách bình luận mà không load lại cả trang
-      await createComment(postId, newComment);
-      const updatedComments = await getCommentsByPostId(postId);
-      setComments(updatedComments); // Cập nhật state với danh sách mới
-
-      // Xóa nội dung trong ô input
-      setCommentText("");
     } catch (error) {
       console.error("Lỗi khi đăng bình luận:", error);
+      try {
+        await createComment(postId, newComment);
+        setCommentText("");
+      } catch (backupError) {
+        console.error("Lỗi khi đăng bình luận qua REST API:", backupError);
+      }
     }
   };
 
@@ -145,6 +202,10 @@ const PostDetailComponent = () => {
                   <span className="post__detail-date">
                     {formatDate(post.postedAt)}
                   </span>
+                  <div className="post__detail-views">
+                    <i className="fa-solid fa-eye"></i>
+                    <span>{post.views}</span>
+                  </div>
                   <div className="post__detail-link">
                     <i className="fa-solid fa-link"></i>
                     <span>Copy</span>
@@ -246,6 +307,7 @@ const PostDetailComponent = () => {
             <p>Oops...Something wrong!!!</p>
           )}
         </div>
+        <ScrollToTopButton showBelow={300} />
       </div>
     </PageTransition>
   );

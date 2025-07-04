@@ -15,12 +15,12 @@ export const SidenavComponent = () => {
 
   // Array of tab names and their corresponding href
   const tabs = [
-    { name: "Home", href: "/api/home" },
-    { name: "Posts", href: "/api/posts" },
-    { name: "Users", href: "/api/users" },
-    { name: "Media", href: "/api/media" },
-    { name: "Profile", href: "/api/profile" },
-    { name: "Settings", href: "/api/settings" },
+    { name: "Home", href: "/api/admin/home" },
+    { name: "Posts", href: "/api/admin/posts" },
+    { name: "Users", href: "/api/admin/users" },
+    { name: "Media", href: "/api/admin/media" },
+    { name: "Profile", href: "/api/admin/profile" },
+    { name: "Settings", href: "/api/admin/settings" },
   ];
 
   // Function to render each tab link dynamically

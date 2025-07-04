@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "framer-motion": "^12.7.4"
+    "@stomp/stompjs": "^7.1.1",
+    "sockjs-client": "^1.6.1"
   }
 }

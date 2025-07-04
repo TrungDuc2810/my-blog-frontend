@@ -14,6 +14,7 @@ const ListPostComponent = () => {
   const [selectedPosts, setSelectedPosts] = useState([]);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [postToUpdate, setPostToUpdate] = useState({});
+  const [editorMode, setEditorMode] = useState(""); // "create" or "update"
 
   useEffect(() => {
     listPosts(pageNo);
@@ -103,6 +104,7 @@ const ListPostComponent = () => {
     if (selectedPosts.length === 1) {
       const selectedPost = posts.find((post) => post.id === selectedPosts[0]);
       setPostToUpdate(selectedPost);
+      setEditorMode("update"); // Chế độ cập nhật
       setShowEditor(true); // Dùng RichTextEditor để cập nhật
     }
   };
@@ -119,6 +121,8 @@ const ListPostComponent = () => {
 
   // Xử lý mở trình soạn thảo khi nhấn "Create"
   const handleOpenEditor = () => {
+    setPostToUpdate({}); // Đặt lại postToUpdate để tạo bài viết mới
+    setEditorMode("create"); // Chế độ tạo mới
     setShowEditor(true);
   };
 
@@ -127,9 +131,9 @@ const ListPostComponent = () => {
     setShowEditor(false);
   };
 
-  const handleSavePost = (postData) => {
+  const handleSavePost = () => {
     setShowEditor(false); // Đóng editor sau khi lưu
-    if (postData.id) {
+    if (editorMode === "update") {
       alert("Post updated successfully!"); // Cập nhật bài viết
     } else {
       alert("Publish successful!!!"); // Tạo mới bài viết
@@ -267,6 +271,7 @@ const ListPostComponent = () => {
                   onSave={handleSavePost}
                   onCancel={handleCancelEditor}
                   initialPost={postToUpdate} // Truyền bài viết cần cập nhật
+                  mode={editorMode} // Chế độ "create" hoặc "update"
                 />
               </div>
             </div>

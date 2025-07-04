@@ -49,7 +49,11 @@ export const getTotalPosts = () => axios.get(`${BASE_URL}/api/posts/total`);
 // Tạo bài viết, axios sẽ tự động thiết lập khi gửi form data
 export const createPost = async (formData) => {
   try {
-    const response = await axios.post(`${BASE_URL}/api/posts`, formData);
+    const response = await axios.post(`${BASE_URL}/api/posts`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data", // Đảm bảo gửi dữ liệu dạng form-data
+      },
+    });
     return response.data;
   } catch (error) {
     console.error(
@@ -82,6 +86,24 @@ export const deletePost = async (id) => {
   } catch (error) {
     console.error(
       "Error deleting post:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+export const generatePostDescription = async (content) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/api/posts/generate-description`,
+      {
+        content,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error generating post description:",
       error.response?.data || error.message
     );
     throw error;
